@@ -52,14 +52,14 @@ class MacroController {
   getStatus() {
     return {
       status: this.status,
-      running: this.status === "running" || this.status === "starting",
+      running: this.status === "running",
       settings: { ...this.settings },
       error: this.lastError
     };
   }
 
   updateSettings(settings = {}) {
-    if (this.status === "running" || this.status === "starting") {
+    if (this.status === "starting" || this.status === "running") {
       throw new Error("Stop V Macro before changing settings.");
     }
 
@@ -89,14 +89,6 @@ class MacroController {
 
   buildPowerShellScript() {
     const s = this.settings;
-
-    const inputMode = s.inputMode;
-    const clickSpeed = s.clickSpeed;
-    const keySpeed = s.keySpeed;
-    const clickButton = s.clickButton;
-    const outputKey = KEY_CODES[s.selectedKey];
-    const activationCode = ACTIVATION_CODES[s.activationKey];
-    const activationMode = s.activationMode;
 
     const script = `
 $ErrorActionPreference = 'Stop'
@@ -198,29 +190,29 @@ public static class VMacroInput
             Marshal.SizeOf(typeof(INPUT))
         );
 
-        if (sent != (uint)inputs.Length)
+        if (sent != inputs.Length)
         {
-            throw new Exception("Windows did not accept all input events.");
+            throw new Exception(
+                "Windows did not accept all input events."
+            );
         }
     }
 }
 '@
 
-$inputMode = '${inputMode}'
-$clickSpeed = ${clickSpeed}
-$keySpeed = ${keySpeed}
-$clickButton = '${clickButton}'
-$outputKey = ${outputKey}
-$activationKey = ${activationCode}
-$activationMode = '${activationMode}'
+$inputMode = '${s.inputMode}'
+$clickSpeed = ${s.clickSpeed}
+$keySpeed = ${s.keySpeed}
+$clickButton = '${s.clickButton}'
+$outputKey = ${KEY_CODES[s.selectedKey]}
+$activationKey = ${ACTIVATION_CODES[s.activationKey]}
+$activationMode = '${s.activationMode}'
 
-$speed = if ($inputMode -eq 'mouse') {
-    $clickSpeed
+if ($inputMode -eq 'mouse') {
+    $interval = [Math]::Max(1, [Math]::Round(1000 / $clickSpeed))
 } else {
-    $keySpeed
+    $interval = [Math]::Max(1, [Math]::Round(1000 / $keySpeed))
 }
-
-$interval = [Math]::Max(1, [int][Math]::Floor(1000 / $speed))
 
 $mouseDown = 0
 $mouseUp = 0
@@ -255,6 +247,9 @@ $wasDown = $false
 $toggledOn = $false
 $clock = [System.Diagnostics.Stopwatch]::StartNew()
 $nextAction = 0
+
+[Console]::WriteLine("VMACRO_READY")
+[Console]::Out.Flush()
 
 while ($true) {
     $isDown = [VMacroInput]::IsDown($activationKey)
@@ -329,7 +324,7 @@ catch {
         ],
         {
           windowsHide: true,
-          stdio: ["ignore", "ignore", "pipe"]
+          stdio: ["ignore", "pipe", "pipe"]
         }
       );
     } catch (error) {
@@ -340,19 +335,26 @@ catch {
 
     this.process = worker;
 
+    let outputBuffer = "";
     let errorOutput = "";
+    let ready = false;
 
-    worker.stderr.on("data", (data) => {
-      errorOutput += data.toString();
-    });
+    worker.stdout.on("data", data => {
+      outputBuffer += data.toString();
 
-    worker.on("spawn", () => {
-      if (this.process === worker) {
-        this.status = "running";
+      if (!ready && outputBuffer.includes("VMACRO_READY")) {
+        ready = true;
+        if (this.process === worker) {
+          this.status = "running";
+        }
       }
     });
 
-    worker.on("error", (error) => {
+    worker.stderr.on("data", data => {
+      errorOutput += data.toString();
+    });
+
+    worker.on("error", error => {
       if (this.process === worker) {
         this.process = null;
         this.status = "error";
@@ -360,17 +362,17 @@ catch {
       }
     });
 
-    worker.on("close", (code) => {
+    worker.on("close", code => {
       if (this.process === worker) {
         this.process = null;
 
-        if (code === 0) {
-          this.status = "stopped";
-        } else {
+        if (code !== 0) {
           this.status = "error";
           this.lastError =
             errorOutput.trim() ||
-            "The PowerShell worker stopped unexpectedly.";
+            "The Windows input process stopped unexpectedly.";
+        } else {
+          this.status = "stopped";
         }
       }
     });
@@ -385,11 +387,7 @@ catch {
     this.status = "stopped";
 
     if (worker) {
-      try {
-        worker.kill();
-      } catch (error) {
-        this.lastError = error.message;
-      }
+      worker.kill();
     }
 
     return false;
