@@ -14,7 +14,8 @@ function createWindow() {
     minWidth: 600,
     minHeight: 450,
     title: "V Macro",
-    backgroundColor: "#101319",
+    backgroundColor: "#000000",
+    autoHideMenuBar: true,
 
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
@@ -31,14 +32,26 @@ function createWindow() {
   });
 }
 
-// Get macro status
+// Get the current macro status
 ipcMain.handle("macro:get-status", () => {
   return macro.getStatus();
 });
 
 // Update macro settings
 ipcMain.handle("macro:update-settings", (_event, settings) => {
-  return macro.updateSettings(settings);
+  try {
+    const result = macro.updateSettings(settings);
+
+    return {
+      success: true,
+      result
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.message
+    };
+  }
 });
 
 // Start the macro
