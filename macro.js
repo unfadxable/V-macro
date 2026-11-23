@@ -9,6 +9,7 @@ const DEFAULT_SETTINGS = {
   selectedKey: "F",
   activationMode: "toggle"
 };
+
 const MAX_SPEED = 1000;
 
 const MOUSE_FLAGS = {
@@ -47,15 +48,16 @@ class MacroController {
     this.running = false;
   }
 
-  updateSettings(if ("inputMode" in newSettings) {
-  if (!["mouse", "keyboard"].includes(newSettings.inputMode)) {
-    throw new Error("Choose mouse or keyboard.");
-  }
-
-  this.settings.inputMode = newSettings.inputMode;
-}) {
+  updateSettings(newSettings) {
     if (!newSettings || typeof newSettings !== "object") {
       throw new Error("Invalid settings.");
+    }
+
+    if ("inputMode" in newSettings) {
+      if (!["mouse", "keyboard"].includes(newSettings.inputMode)) {
+        throw new Error("Choose mouse or keyboard.");
+      }
+      this.settings.inputMode = newSettings.inputMode;
     }
 
     if ("clickSpeed" in newSettings) {
@@ -95,11 +97,13 @@ class MacroController {
     if (this.running) return true;
 
     if (process.platform !== "win32") {
-      throw new Error("V Macro input requires Windows.");
+      throw new Error("V Macro requires Windows.");
     }
 
-  const runMouse = this.settings.inputMode === "mouse";
-const runKeyboard = this.settings.inputMode === "keyboard";
+    const runMouse = this.settings.inputMode === "mouse";
+    const mouse = MOUSE_FLAGS[this.settings.clickButton];
+    const key = KEY_CODES[this.settings.selectedKey];
+
     const script = `
 Add-Type -TypeDefinition @'
 using System;
@@ -139,27 +143,34 @@ public class VMacroInput {
 
     public static void Click(uint down, uint up, uint data) {
         INPUT[] inputs = new INPUT[2];
+
         inputs[0].type = 0;
         inputs[0].U.mi.dwFlags = down;
         inputs[0].U.mi.mouseData = data;
+
         inputs[1].type = 0;
         inputs[1].U.mi.dwFlags = up;
         inputs[1].U.mi.mouseData = data;
+
         SendInput(2, inputs, Marshal.SizeOf(typeof(INPUT)));
     }
 
     public static void Press(ushort vk) {
         INPUT[] inputs = new INPUT[2];
+
         inputs[0].type = 1;
         inputs[0].U.ki.wVk = vk;
+
         inputs[1].type = 1;
         inputs[1].U.ki.wVk = vk;
         inputs[1].U.ki.dwFlags = 2;
+
         SendInput(2, inputs, Marshal.SizeOf(typeof(INPUT)));
     }
 }
 '@
 
+$runMouse = ${runMouse ? "$true" : "$false"}
 $clickDown = ${mouse[0]}
 $clickUp = ${mouse[1]}
 $mouseData = ${mouse[2]}
@@ -168,62 +179,62 @@ $clickDelay = 1000.0 / ${this.settings.clickSpeed}
 $keyDelay = 1000.0 / ${this.settings.keySpeed}
 
 $clock = [System.Diagnostics.Stopwatch]::StartNew()
-$nextClick = 0.0
-$nextKey = 0.0
+$nextAction = 0.0
 
 while ($true) {
     $now = $clock.Elapsed.TotalMilliseconds
 
-    if ($now -ge $nextClick) {
-        [VMacroInput]::Click($clickDown, $clickUp, $mouseData)
-        $nextClick = $now + $clickDelay
-    }
-
-    if ($now -ge $nextKey) {
-        [VMacroInput]::Press($keyCode)
-        $nextKey = $now + $keyDelay
+    if ($now -ge $nextAction) {
+        if ($runMouse) {
+            [VMacroInput]::Click($clickDown, $clickUp, $mouseData)
+            $nextAction = $now + $clickDelay
+        }
+        else {
+            [VMacroInput]::Press($keyCode)
+            $nextAction = $now + $keyDelay
+        }
     }
 
     Start-Sleep -Milliseconds 1
 }
 `;
 
-    const encoded = Buffer.from(script, "utf16le").toString("base64");
-
-    this.worker = spawn(
+    const worker = spawn(
       "powershell.exe",
-      [
-        "-NoProfile",
-        "-NonInteractive",
-        "-ExecutionPolicy",
-        "Bypass",
-        "-EncodedCommand",
-        encoded
-      ],
+      ["-NoProfile", "-NonInteractive", "-Command", script],
       { windowsHide: true, stdio: "ignore" }
     );
 
-    this.worker.on("error", () => {
-      this.running = false;
-      this.worker = null;
-    });
-
-    this.worker.on("exit", () => {
-      this.running = false;
-      this.worker = null;
-    });
-
+    this.worker = worker;
     this.running = true;
+
+    worker.on("error", () => {
+      if (this.worker === worker) {
+        this.worker = null;
+        this.running = false;
+      }
+    });
+
+    worker.on("exit", () => {
+      if (this.worker === worker) {
+        this.worker = null;
+        this.running = false;
+      }
+    });
+
     return true;
   }
 
   stop() {
-    if (this.worker) {
-      this.worker.kill();
-      this.worker = null;
+    const worker = this.worker;
+
+    this.worker = null;
+    this.running = false;
+
+    if (worker) {
+      worker.kill();
     }
 
-    this.running = false;
     return true;
   }
 
