@@ -2,19 +2,12 @@
 const { contextBridge, ipcRenderer } = require("electron");
 
 contextBridge.exposeInMainWorld("vMacro", {
-  getStatus: () => {
-    return ipcRenderer.invoke("macro:get-status");
-  },
+  getStatus: () => ipcRenderer.invoke("macro:get-status"),
 
-  updateSettings: (settings) => {
-    return ipcRenderer.invoke("macro:update-settings", settings);
-  },
+  updateSettings: (settings) =>
+    ipcRenderer.invoke("macro:update-settings", settings),
 
-  start: () => {
-    return ipcRenderer.invoke("macro:start");
-  },
+  start: () => ipcRenderer.invoke("macro:start"),
 
-  stop: () => {
-    return ipcRenderer.invoke("macro:stop");
-  }
+  stop: () => ipcRenderer.invoke("macro:stop")
 });
