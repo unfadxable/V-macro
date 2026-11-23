@@ -1,5 +1,8 @@
-const { app, BrowserWindow } = require("electron");
+const { app, BrowserWindow, ipcMain } = require("electron");
 const path = require("path");
+const { MacroController } = require("./macro");
+
+const macro = new MacroController();
 
 function createWindow() {
   const window = new BrowserWindow({
@@ -20,6 +23,22 @@ function createWindow() {
   window.loadFile(path.join(__dirname, "index.html"));
 }
 
+ipcMain.handle("macro:get-status", () => {
+  return macro.getStatus();
+});
+
+ipcMain.handle("macro:update-settings", (_, settings) => {
+  return macro.updateSettings(settings);
+});
+
+ipcMain.handle("macro:start", () => {
+  return macro.start();
+});
+
+ipcMain.handle("macro:stop", () => {
+  return macro.stop();
+});
+
 app.whenReady().then(() => {
   createWindow();
 
@@ -31,6 +50,8 @@ app.whenReady().then(() => {
 });
 
 app.on("window-all-closed", () => {
+  macro.stop();
+
   if (process.platform !== "darwin") {
     app.quit();
   }
