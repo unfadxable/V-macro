@@ -1,0 +1,272 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>V Macro</title>
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;background:#090a0d;color:#eee;
+ font-family:Arial,sans-serif;padding:14px;
+}
+.app{max-width:850px;margin:20px auto}
+.header,.panel,.footer{
+ background:linear-gradient(145deg,#111216,#090a0d);
+ border:1px solid #393b43;border-radius:13px;
+}
+.header{
+ display:flex;align-items:center;justify-content:space-between;
+ padding:17px 22px;margin-bottom:18px;
+}
+.logo{font-size:29px;font-weight:bold}
+.logo span{color:#7042d9}
+.window-buttons{color:#bbb;letter-spacing:18px;font-size:20px}
+.panel{padding:22px;margin-bottom:17px}
+.heading{
+ display:flex;align-items:center;justify-content:space-between;
+ margin-bottom:23px;
+}
+h2{font-size:25px;margin:0}
+.value{
+ border:1px solid #41434d;border-radius:9px;
+ padding:9px 15px;font-size:20px;
+}
+input[type=range]{
+ width:100%;accent-color:#9296a3;cursor:pointer;
+}
+.limits{
+ display:flex;justify-content:space-between;
+ color:#b9bac4;margin:8px 0 20px;
+}
+.settings{
+ display:grid;grid-template-columns:1.3fr .8fr 1.1fr;
+ gap:12px;align-items:center;
+}
+select,input[type=number],button{
+ background:#15161c;color:#eee;border:1px solid #484a54;
+ border-radius:8px;padding:12px;font-size:16px;
+ min-width:0;
+}
+input[type=number]{width:100%}
+button{cursor:pointer}
+button:active{background:#33343e}
+.presets{display:flex;gap:8px;flex-wrap:wrap}
+.presets button{padding:10px 13px}
+.presets button.active,.mode button.active{
+ background:#444b5d;border-color:#82899b;
+}
+.controls-grid{
+ display:grid;grid-template-columns:1.2fr 1fr;gap:22px;
+}
+.control-column{padding:5px}
+.control-title{font-size:19px;margin-bottom:12px}
+.activation{width:100%;margin-bottom:18px}
+.mode{display:flex;gap:8px}
+.mode button{flex:1}
+.bottom-controls{
+ display:flex;align-items:center;gap:14px;
+ margin-top:18px;flex-wrap:wrap;
+}
+.bottom-controls input{max-width:140px}
+.status{color:#999;margin-left:10px}
+.dot{
+ display:inline-block;width:12px;height:12px;
+ background:#555;border-radius:50%;margin-right:8px;
+}
+.dot.on{background:#48b878}
+.footer{
+ display:flex;justify-content:space-between;align-items:center;
+ padding:13px;gap:12px;
+}
+.footer button{min-width:150px;font-weight:bold}
+@media(max-width:600px){
+ body{padding:9px}
+ .app{margin:5px auto}
+ .panel{padding:15px}
+ .settings{grid-template-columns:1fr 1fr}
+ .presets{grid-column:1/-1}
+ .controls-grid{grid-template-columns:1fr}
+ .footer{flex-direction:column;align-items:stretch}
+ .window-buttons{letter-spacing:8px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<header class="header">
+ <div class="logo"><span>V</span> Macro</div>
+ <div class="window-buttons">— □ ×</div>
+</header>
+
+<!-- CLICKS -->
+<section class="panel">
+ <div class="heading">
+  <h2>Clicks</h2>
+  <div class="value" id="clickDisplay">0 CPS</div>
+ </div>
+
+ <input id="clickSlider" type="range" min="1" max="1000" value="1">
+
+ <div class="limits">
+  <span>1 CPS</span><span>1,000 CPS</span>
+ </div>
+
+ <div class="settings">
+  <select id="mouseButton">
+   <option>Left Mouse</option>
+   <option>Right Mouse</option>
+   <option>Middle Mouse</option>
+   <option>Mouse4</option>
+   <option>Mouse5</option>
+  </select>
+
+  <input id="clickNumber" type="number" min="1" max="1000" value="1">
+  <div class="presets" id="clickPresets">
+   <button data-value="10">10</button>
+   <button data-value="50">50</button>
+   <button data-value="100">100</button>
+   <button data-value="250">250</button>
+   <button data-value="500">500</button>
+   <button data-value="1000">1k</button>
+  </div>
+ </div>
+</section>
+
+<!-- KEYS -->
+<section class="panel">
+ <div class="heading">
+  <h2>Keys</h2>
+  <div class="value" id="keyDisplay">0 KPS</div>
+ </div>
+
+ <input id="keySlider" type="range" min="1" max="1000" value="1">
+
+ <div class="limits">
+  <span>1 KPS</span><span>1,000 KPS</span>
+ </div>
+
+ <div class="settings">
+  <select id="keyButton">
+   <option>F</option><option>R</option><option>E</option>
+   <option>Q</option><option>Space</option>
+   <option>Shift</option><option>Ctrl</option>
+   <option>Alt</option>
+  </select>
+
+  <input id="keyNumber" type="number" min="1" max="1000" value="1">
+  <div class="presets" id="keyPresets">
+   <button data-value="10">10</button>
+   <button data-value="50">50</button>
+   <button data-value="100">100</button>
+   <button data-value="250">250</button>
+   <button data-value="500">500</button>
+   <button data-value="1000">1k</button>
+  </div>
+ </div>
+</section>
+
+<!-- CONTROLS -->
+<section class="panel">
+ <h2 style="margin-bottom:22px">Controls</h2>
+
+ <div class="controls-grid">
+  <div class="control-column">
+   <div class="control-title">Activation Key</div>
+   <button class="activation" id="activation">
+    Choose Key
+   </button>
+
+   <div class="bottom-controls">
+    <span>On / Off</span>
+    <strong>F8</strong>
+   </div>
+  </div>
+
+  <div class="control-column">
+   <div class="control-title">Mode</div>
+   <div class="mode">
+    <button class="active" id="hold">Hold</button>
+    <button id="toggle">Toggle</button>
+   </div>
+
+   <div class="bottom-controls">
+    <span class="dot" id="statusDot"></span>
+    <span class="status" id="status">Status: Inactive</span>
+   </div>
+  </div>
+ </div>
+</section>
+
+<footer class="footer">
+ <span style="color:#999">ⓘ V Macro - Fast. Simple. Powerful.</span>
+ <button id="startButton">▶ Start</button>
+</footer>
+
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+
+function setupSpeed(sliderId,numberId,displayId,presetId,unit){
+ const slider=$(sliderId);
+ const number=$(numberId);
+ const display=$(displayId);
+ const presets=$(presetId);
+
+ function update(value){
+  value=Math.max(1,Math.min(1000,Number(value)||1));
+  slider.value=value;
+  number.value=value;
+  display.textContent=value+' '+unit;
+  presets.querySelectorAll('button').forEach(button=>{
+   button.classList.toggle('active',Number(button.dataset.value)===value);
+  });
+ }
+ slider.addEventListener('input',()=>update(slider.value));
+ number.addEventListener('change',()=>update(number.value));
+ presets.querySelectorAll('button').forEach(button=>{
+  button.addEventListener('click',()=>update(button.dataset.value));
+ });
+ update(slider.value);
+}
+
+setupSpeed('clickSlider','clickNumber','clickDisplay','clickPresets','CPS');
+setupSpeed('keySlider','keyNumber','keyDisplay','keyPresets','KPS');
+
+let mode='Hold';
+let running=false;
+
+$('hold').onclick=()=>{
+ mode='Hold';
+ $('hold').classList.add('active');
+ $('toggle').classList.remove('active');
+};
+
+$('toggle').onclick=()=>{
+ mode='Toggle';
+ $('toggle').classList.add('active');
+ $('hold').classList.remove('active');
+};
+
+$('activation').onclick=()=>{
+ $('activation').textContent='Press a key...';
+ const listener=e=>{
+  e.preventDefault();
+  $('activation').textContent=e.key.toUpperCase();
+  window.removeEventListener('keydown',listener);
+ };
+ window.addEventListener('keydown',listener);
+};
+
+$('startButton').onclick=()=>{
+ running=!running;
+ $('startButton').textContent=running?'■ Stop':'▶ Start';
+ $('status').textContent=running?'Status: Ready':'Status: Inactive';
+ $('statusDot').classList.toggle('on',running);
+};
+</script>
+</body>
+</html>
