@@ -1,0 +1,10 @@
+{
+  "name": "v-macro",
+  "version": "1.0.0",
+  "description": "V Macro desktop application",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {}
+}
