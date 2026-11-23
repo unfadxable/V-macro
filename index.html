@@ -208,65 +208,93 @@ button:active{background:#33343e}
 </div>
 
 <script>
-const $=id=>document.getElementById(id);
+const $ = id => document.getElementById(id);
 
-function setupSpeed(sliderId,numberId,displayId,presetId,unit){
- const slider=$(sliderId);
- const number=$(numberId);
- const display=$(displayId);
- const presets=$(presetId);
+let mode = "Hold";
+let running = false;
 
- function update(value){
-  value=Math.max(1,Math.min(1000,Number(value)||1));
-  slider.value=value;
-  number.value=value;
-  display.textContent=value+' '+unit;
-  presets.querySelectorAll('button').forEach(button=>{
-   button.classList.toggle('active',Number(button.dataset.value)===value);
+async function updateEngine() {
+  if (!window.vMacro) return;
+
+  await window.vMacro.updateSettings({
+    clickSpeed: $("clickSlider").value,
+    keySpeed: $("keySlider").value,
+    clickButton: $("mouseButton").value,
+    selectedKey: $("keyButton").value,
+    activationMode: mode
   });
- }
- slider.addEventListener('input',()=>update(slider.value));
- number.addEventListener('change',()=>update(number.value));
- presets.querySelectorAll('button').forEach(button=>{
-  button.addEventListener('click',()=>update(button.dataset.value));
- });
- update(slider.value);
 }
 
-setupSpeed('clickSlider','clickNumber','clickDisplay','clickPresets','CPS');
-setupSpeed('keySlider','keyNumber','keyDisplay','keyPresets','KPS');
+function setupSpeed(sliderId, numberId, displayId, presetId, unit) {
+  const slider = $(sliderId);
+  const number = $(numberId);
+  const display = $(displayId);
+  const presets = $(presetId);
 
-let mode='Hold';
-let running=false;
+  function update(value) {
+    value = Math.max(1, Math.min(1000, Number(value) || 1));
 
-$('hold').onclick=()=>{
- mode='Hold';
- $('hold').classList.add('active');
- $('toggle').classList.remove('active');
-};
+    slider.value = value;
+    number.value = value;
+    display.textContent = value + " " + unit;
 
-$('toggle').onclick=()=>{
- mode='Toggle';
- $('toggle').classList.add('active');
- $('hold').classList.remove('active');
-};
+    presets.querySelectorAll("button").forEach(button => {
+      button.classList.toggle(
+        "active",
+        Number(button.dataset.value) === value
+      );
+    });
 
-$('activation').onclick=()=>{
- $('activation').textContent='Press a key...';
- const listener=e=>{
-  e.preventDefault();
-  $('activation').textContent=e.key.toUpperCase();
-  window.removeEventListener('keydown',listener);
- };
- window.addEventListener('keydown',listener);
-};
+    updateEngine();
+  }
 
-$('startButton').onclick=()=>{
- running=!running;
- $('startButton').textContent=running?'■ Stop':'▶ Start';
- $('status').textContent=running?'Status: Ready':'Status: Inactive';
- $('statusDot').classList.toggle('on',running);
-};
+  slider.addEventListener("input", () => update(slider.value));
+  number.addEventListener("change", () => update(number.value));
+
+  presets.querySelectorAll("button").forEach(button => {
+    button.addEventListener("click", () => update(button.dataset.value));
+  });
+
+  update(slider.value);
+}
+
+setupSpeed("clickSlider", "clickNumber", "clickDisplay", "clickPresets", "CPS");
+setupSpeed("keySlider", "keyNumber", "keyDisplay", "keyPresets", "KPS");
+
+$("mouseButton").addEventListener("change", updateEngine);
+$("keyButton").addEventListener("change", updateEngine);
+
+function setMode(newMode) {
+  mode = newMode;
+
+  $("hold").classList.toggle("active", mode === "Hold");
+  $("toggle").classList.toggle("active", mode === "Toggle");
+
+  updateEngine();
+}
+
+$("hold").onclick = () => setMode("Hold");
+$("toggle").onclick = () => setMode("Toggle");
+
+async function setRunning(value) {
+  if (!window.vMacro) return;
+
+  running = value;
+
+  if (running) {
+    await window.vMacro.start();
+  } else {
+    await window.vMacro.stop();
+  }
+
+  $("startButton").textContent = running ? "■ Stop" : "▶ Start";
+  $("status").textContent = running ? "Status: Ready" : "Status: Inactive";
+  $("statusDot").classList.toggle("on", running);
+}
+
+$("startButton").onclick = () => setRunning(!running);
+
+updateEngine();
 </script>
 </body>
 </html>
