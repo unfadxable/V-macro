@@ -2,13 +2,13 @@
 const { spawn } = require("child_process");
 
 const DEFAULT_SETTINGS = {
+  inputMode: "mouse",
   clickSpeed: 10,
   keySpeed: 10,
   clickButton: "left",
   selectedKey: "F",
   activationMode: "toggle"
 };
-
 const MAX_SPEED = 1000;
 
 const MOUSE_FLAGS = {
@@ -47,7 +47,13 @@ class MacroController {
     this.running = false;
   }
 
-  updateSettings(newSettings) {
+  updateSettings(if ("inputMode" in newSettings) {
+  if (!["mouse", "keyboard"].includes(newSettings.inputMode)) {
+    throw new Error("Choose mouse or keyboard.");
+  }
+
+  this.settings.inputMode = newSettings.inputMode;
+}) {
     if (!newSettings || typeof newSettings !== "object") {
       throw new Error("Invalid settings.");
     }
@@ -92,9 +98,8 @@ class MacroController {
       throw new Error("V Macro input requires Windows.");
     }
 
-    const mouse = MOUSE_FLAGS[this.settings.clickButton];
-    const key = KEY_CODES[this.settings.selectedKey];
-
+  const runMouse = this.settings.inputMode === "mouse";
+const runKeyboard = this.settings.inputMode === "keyboard";
     const script = `
 Add-Type -TypeDefinition @'
 using System;
