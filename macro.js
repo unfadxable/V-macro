@@ -7,17 +7,16 @@ const DEFAULT_SETTINGS = {
   keySpeed: 10,
   clickButton: "left",
   selectedKey: "F",
+  activationKey: "F6",
   activationMode: "toggle"
 };
 
-const MAX_SPEED = 1000;
-
-const MOUSE_FLAGS = {
-  left: [0x0002, 0x0004, 0],
-  right: [0x0008, 0x0010, 0],
-  middle: [0x0020, 0x0040, 0],
-  mouse4: [0x0080, 0x0100, 1],
-  mouse5: [0x0080, 0x0100, 2]
+const ALLOWED = {
+  inputMode: ["mouse", "keyboard"],
+  clickButton: ["left", "right", "middle", "mouse4", "mouse5"],
+  selectedKey: ["F", "R", "E", "Q", "SPACE", "SHIFT", "CTRL", "ALT"],
+  activationKey: ["F6", "F7", "F8", "F9", "F10", "F11", "F12", "INSERT"],
+  activationMode: ["toggle", "hold"]
 };
 
 const KEY_CODES = {
@@ -31,194 +30,322 @@ const KEY_CODES = {
   ALT: 0x12
 };
 
-function validateSpeed(value) {
-  const speed = Number(value);
-
-  if (!Number.isFinite(speed)) {
-    throw new Error("Speed must be a number.");
-  }
-
-  return Math.max(1, Math.min(MAX_SPEED, Math.round(speed)));
-}
+const ACTIVATION_CODES = {
+  F6: 0x75,
+  F7: 0x76,
+  F8: 0x77,
+  F9: 0x78,
+  F10: 0x79,
+  F11: 0x7A,
+  F12: 0x7B,
+  INSERT: 0x2D
+};
 
 class MacroController {
   constructor() {
     this.settings = { ...DEFAULT_SETTINGS };
-    this.worker = null;
+    this.process = null;
     this.running = false;
+    this.lastError = null;
   }
 
-  updateSettings(newSettings) {
-    if (!newSettings || typeof newSettings !== "object") {
-      throw new Error("Invalid settings.");
-    }
-
-    if ("inputMode" in newSettings) {
-      if (!["mouse", "keyboard"].includes(newSettings.inputMode)) {
-        throw new Error("Choose mouse or keyboard.");
-      }
-      this.settings.inputMode = newSettings.inputMode;
-    }
-
-    if ("clickSpeed" in newSettings) {
-      this.settings.clickSpeed = validateSpeed(newSettings.clickSpeed);
-    }
-
-    if ("keySpeed" in newSettings) {
-      this.settings.keySpeed = validateSpeed(newSettings.keySpeed);
-    }
-
-    if ("clickButton" in newSettings) {
-      if (!MOUSE_FLAGS[newSettings.clickButton]) {
-        throw new Error("Invalid mouse button.");
-      }
-      this.settings.clickButton = newSettings.clickButton;
-    }
-
-    if ("selectedKey" in newSettings) {
-      const key = String(newSettings.selectedKey).toUpperCase();
-      if (!KEY_CODES[key]) {
-        throw new Error("Invalid key.");
-      }
-      this.settings.selectedKey = key;
-    }
-
-    if ("activationMode" in newSettings) {
-      if (!["hold", "toggle"].includes(newSettings.activationMode)) {
-        throw new Error("Invalid activation mode.");
-      }
-      this.settings.activationMode = newSettings.activationMode;
-    }
-
-    return { ...this.settings };
+  getStatus() {
+    return {
+      running: this.running,
+      settings: { ...this.settings },
+      error: this.lastError
+    };
   }
 
-  start() {
-    if (this.running) return true;
+  updateSettings(settings = {}) {
+    const next = { ...this.settings, ...settings };
 
-    if (process.platform !== "win32") {
-      throw new Error("V Macro requires Windows.");
+    for (const key of Object.keys(ALLOWED)) {
+      if (!ALLOWED[key].includes(next[key])) {
+        throw new Error("Invalid setting: " + key);
+      }
     }
 
-    const runMouse = this.settings.inputMode === "mouse";
-    const mouse = MOUSE_FLAGS[this.settings.clickButton];
-    const key = KEY_CODES[this.settings.selectedKey];
+    for (const key of ["clickSpeed", "keySpeed"]) {
+      const value = Number(next[key]);
+
+      if (!Number.isFinite(value) || value < 1 || value > 1000) {
+        throw new Error(key + " must be between 1 and 1000.");
+      }
+
+      next[key] = Math.round(value);
+    }
+
+    this.settings = next;
+    return { success: true };
+  }
+
+  buildPowerShellScript() {
+    const s = this.settings;
+
+    const inputMode = s.inputMode;
+    const clickSpeed = s.clickSpeed;
+    const keySpeed = s.keySpeed;
+    const clickButton = s.clickButton;
+    const selectedKey = s.selectedKey;
+    const activationCode = ACTIVATION_CODES[s.activationKey];
+    const activationMode = s.activationMode;
+    const outputKey = KEY_CODES[selectedKey];
 
     const script = `
+$ErrorActionPreference = 'Stop'
+
+try {
 Add-Type -TypeDefinition @'
 using System;
 using System.Runtime.InteropServices;
 
-public class VMacroInput {
+public static class VMacroInput
+{
     [StructLayout(LayoutKind.Sequential)]
-    public struct INPUT {
-        public uint type;
-        public InputUnion U;
+    public struct MOUSEINPUT
+    {
+        public int dx;
+        public int dy;
+        public uint mouseData;
+        public uint dwFlags;
+        public uint time;
+        public UIntPtr dwExtraInfo;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct KEYBDINPUT
+    {
+        public ushort wVk;
+        public ushort wScan;
+        public uint dwFlags;
+        public uint time;
+        public UIntPtr dwExtraInfo;
     }
 
     [StructLayout(LayoutKind.Explicit)]
-    public struct InputUnion {
-        [FieldOffset(0)] public MOUSEINPUT mi;
-        [FieldOffset(0)] public KEYBDINPUT ki;
+    public struct INPUTUNION
+    {
+        [FieldOffset(0)]
+        public MOUSEINPUT mi;
+
+        [FieldOffset(0)]
+        public KEYBDINPUT ki;
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct MOUSEINPUT {
-        public int dx, dy;
-        public uint mouseData, dwFlags, time;
-        public UIntPtr dwExtraInfo;
+    public struct INPUT
+    {
+        public uint type;
+        public INPUTUNION U;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
-    public struct KEYBDINPUT {
-        public ushort wVk, wScan;
-        public uint dwFlags, time;
-        public UIntPtr dwExtraInfo;
-    }
+    [DllImport("user32.dll")]
+    public static extern short GetAsyncKeyState(int vKey);
 
-    [DllImport("user32.dll", SetLastError=true)]
+    [DllImport("user32.dll", SetLastError = true)]
     public static extern uint SendInput(
-        uint count, INPUT[] inputs, int size
+        uint nInputs,
+        INPUT[] pInputs,
+        int cbSize
     );
 
-    public static void Click(uint down, uint up, uint data) {
+    public static bool IsDown(int key)
+    {
+        return GetAsyncKeyState(key) < 0;
+    }
+
+    public static void Click(uint downFlag, uint upFlag, uint data)
+    {
         INPUT[] inputs = new INPUT[2];
 
         inputs[0].type = 0;
-        inputs[0].U.mi.dwFlags = down;
+        inputs[0].U.mi.dwFlags = downFlag;
         inputs[0].U.mi.mouseData = data;
 
         inputs[1].type = 0;
-        inputs[1].U.mi.dwFlags = up;
+        inputs[1].U.mi.dwFlags = upFlag;
         inputs[1].U.mi.mouseData = data;
 
-        SendInput(2, inputs, Marshal.SizeOf(typeof(INPUT)));
+        Send(inputs);
     }
 
-    public static void Press(ushort vk) {
+    public static void PressKey(int key)
+    {
         INPUT[] inputs = new INPUT[2];
 
         inputs[0].type = 1;
-        inputs[0].U.ki.wVk = vk;
+        inputs[0].U.ki.wVk = (ushort)key;
 
         inputs[1].type = 1;
-        inputs[1].U.ki.wVk = vk;
+        inputs[1].U.ki.wVk = (ushort)key;
         inputs[1].U.ki.dwFlags = 2;
 
-        SendInput(2, inputs, Marshal.SizeOf(typeof(INPUT)));
+        Send(inputs);
+    }
+
+    private static void Send(INPUT[] inputs)
+    {
+        uint sent = SendInput(
+            (uint)inputs.Length,
+            inputs,
+            Marshal.SizeOf(typeof(INPUT))
+        );
+
+        if (sent != inputs.Length)
+        {
+            throw new Exception("Windows did not accept all input events.");
+        }
     }
 }
 '@
 
-$runMouse = ${runMouse ? "$true" : "$false"}
-$clickDown = ${mouse[0]}
-$clickUp = ${mouse[1]}
-$mouseData = ${mouse[2]}
-$keyCode = ${key}
-$clickDelay = 1000.0 / ${this.settings.clickSpeed}
-$keyDelay = 1000.0 / ${this.settings.keySpeed}
+$inputMode = '${inputMode}'
+$clickSpeed = ${clickSpeed}
+$keySpeed = ${keySpeed}
+$clickButton = '${clickButton}'
+$outputKey = ${outputKey}
+$activationKey = ${activationCode}
+$activationMode = '${activationMode}'
 
+$interval = if ($inputMode -eq 'mouse') {
+    [Math]::Max(1, [Math]::Round(1000 / $clickSpeed))
+} else {
+    [Math]::Max(1, [Math]::Round(1000 / $keySpeed))
+}
+
+$mouseDown = 0
+$mouseUp = 0
+$mouseData = 0
+
+switch ($clickButton) {
+    'left' {
+        $mouseDown = 0x0002
+        $mouseUp = 0x0004
+    }
+    'right' {
+        $mouseDown = 0x0008
+        $mouseUp = 0x0010
+    }
+    'middle' {
+        $mouseDown = 0x0020
+        $mouseUp = 0x0040
+    }
+    'mouse4' {
+        $mouseDown = 0x0080
+        $mouseUp = 0x0100
+        $mouseData = 1
+    }
+    'mouse5' {
+        $mouseDown = 0x0080
+        $mouseUp = 0x0100
+        $mouseData = 2
+    }
+}
+
+$wasDown = $false
+$toggledOn = $false
 $clock = [System.Diagnostics.Stopwatch]::StartNew()
-$nextAction = 0.0
+$nextAction = 0
 
 while ($true) {
-    $now = $clock.Elapsed.TotalMilliseconds
+    $isDown = [VMacroInput]::IsDown($activationKey)
 
-    if ($now -ge $nextAction) {
-        if ($runMouse) {
-            [VMacroInput]::Click($clickDown, $clickUp, $mouseData)
-            $nextAction = $now + $clickDelay
+    if ($activationMode -eq 'hold') {
+        $enabled = $isDown
+    } else {
+        if ($isDown -and -not $wasDown) {
+            $toggledOn = -not $toggledOn
         }
-        else {
-            [VMacroInput]::Press($keyCode)
-            $nextAction = $now + $keyDelay
+
+        $enabled = $toggledOn
+    }
+
+    $wasDown = $isDown
+
+    if ($enabled -and $clock.ElapsedMilliseconds -ge $nextAction) {
+        if ($inputMode -eq 'mouse') {
+            [VMacroInput]::Click(
+                [uint32]$mouseDown,
+                [uint32]$mouseUp,
+                [uint32]$mouseData
+            )
+        } else {
+            [VMacroInput]::PressKey($outputKey)
         }
+
+        $nextAction = $clock.ElapsedMilliseconds + $interval
     }
 
     Start-Sleep -Milliseconds 1
 }
+}
+catch {
+    [Console]::Error.WriteLine($_.Exception.Message)
+    exit 1
+}
 `;
+
+    return script;
+  }
+
+  start() {
+    if (process.platform !== "win32") {
+      throw new Error("V Macro requires Windows.");
+    }
+
+    if (this.running) {
+      return true;
+    }
+
+    this.lastError = null;
+
+    const script = this.buildPowerShellScript();
+
+    const encodedScript = Buffer
+      .from(script, "utf16le")
+      .toString("base64");
 
     const worker = spawn(
       "powershell.exe",
-      ["-NoProfile", "-NonInteractive", "-Command", script],
-      { windowsHide: true, stdio: "ignore" }
+      [
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-EncodedCommand",
+        encodedScript
+      ],
+      {
+        windowsHide: true,
+        stdio: ["ignore", "ignore", "pipe"]
+      }
     );
 
-    this.worker = worker;
+    this.process = worker;
     this.running = true;
 
-    worker.on("error", () => {
-      if (this.worker === worker) {
-        this.worker = null;
-        this.running = false;
-      }
+    let errorOutput = "";
+
+    worker.stderr.on("data", (data) => {
+      errorOutput += data.toString();
     });
 
-    worker.on("exit", () => {
-      if (this.worker === worker) {
-        this.worker = null;
+    worker.on("error", (error) => {
+      this.lastError = error.message;
+      this.running = false;
+      this.process = null;
+    });
+
+    worker.on("close", (code) => {
+      if (this.process === worker) {
+        this.process = null;
         this.running = false;
+
+        if (code !== 0 && errorOutput.trim()) {
+          this.lastError = errorOutput.trim();
+        }
       }
     });
 
@@ -226,23 +353,16 @@ while ($true) {
   }
 
   stop() {
-    const worker = this.worker;
-
-    this.worker = null;
-    this.running = false;
-
-    if (worker) {
+    if (this.process) {
+      const worker = this.process;
+      this.process = null;
+      this.running = false;
       worker.kill();
+    } else {
+      this.running = false;
     }
 
-    return true;
-  }
-
-  getStatus() {
-    return {
-      running: this.running,
-      settings: { ...this.settings }
-    };
+    return false;
   }
 }
 
