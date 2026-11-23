@@ -5,14 +5,17 @@ const { MacroController } = require("./macro");
 
 const macro = new MacroController();
 
+let mainWindow = null;
+
 function createWindow() {
-  const window = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 900,
     height: 650,
     minWidth: 600,
     minHeight: 450,
     title: "V Macro",
     backgroundColor: "#101319",
+
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,
@@ -21,29 +24,58 @@ function createWindow() {
     }
   });
 
-  window.loadFile(path.join(__dirname, "index.html"));
+  mainWindow.loadFile(path.join(__dirname, "index.html"));
+
+  mainWindow.on("closed", () => {
+    mainWindow = null;
+  });
 }
 
+// Get macro status
 ipcMain.handle("macro:get-status", () => {
   return macro.getStatus();
 });
 
-ipcMain.handle("macro:update-settings", (_, settings) => {
+// Update macro settings
+ipcMain.handle("macro:update-settings", (_event, settings) => {
   return macro.updateSettings(settings);
 });
 
+// Start the macro
 ipcMain.handle("macro:start", () => {
   try {
-    return { success: true, running: macro.start() };
+    const running = macro.start();
+
+    return {
+      success: true,
+      running
+    };
   } catch (error) {
-    return { success: false, error: error.message };
+    return {
+      success: false,
+      error: error.message
+    };
   }
 });
 
+// Stop the macro
 ipcMain.handle("macro:stop", () => {
-  return { success: true, running: macro.stop() };
+  try {
+    const running = macro.stop();
+
+    return {
+      success: true,
+      running
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.message
+    };
+  }
 });
 
+// Start the application
 app.whenReady().then(() => {
   createWindow();
 
@@ -54,11 +86,15 @@ app.whenReady().then(() => {
   });
 });
 
+// Stop the macro before quitting
 app.on("before-quit", () => {
   macro.stop();
 });
 
+// Handle closing all windows
 app.on("window-all-closed", () => {
+  macro.stop();
+
   if (process.platform !== "darwin") {
     app.quit();
   }
