@@ -3,316 +3,412 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>V Macro</title>
 <style>
-*{box-sizing:border-box}
-body{margin:0;min-height:100vh;padding:22px 14px;background:#0b0b12;color:#f4f0ff;font-family:Arial,sans-serif}
-.app{max-width:760px;margin:auto}
-header{text-align:center;margin-bottom:25px}
-header h1{margin:0;font-size:36px;letter-spacing:3px;color:#a879ff}
-header p{color:#9991ad;margin-top:8px;font-size:13px}
-.panel{background:linear-gradient(145deg,#191522,#11101a);border:1px solid #34264c;border-radius:15px;padding:21px;margin-bottom:17px}
-h2{margin:0 0 18px;font-size:17px;color:#c5a3ff}
-.field{margin-bottom:19px}
-.field:last-child{margin-bottom:0}
-label{display:block;color:#d8d0e8;font-size:13px;margin-bottom:9px}
-.value{float:right;color:#bd91ff;font-weight:bold}
-select{width:100%;padding:12px;border-radius:9px;border:1px solid #493565;background:#100d18;color:white;outline:none;font-size:14px}
-input[type=range]{width:100%;accent-color:#9560ff;cursor:pointer}
-.mode-options{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.mode-option{padding:15px 10px;border:1px solid #493565;border-radius:10px;background:#100d18;color:#cfc4e4;cursor:pointer;text-align:center;font-size:14px}
-.mode-option.active{background:#38205c;border-color:#a16cff;color:white}
-.actions{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px}
-button{border:0;border-radius:10px;padding:14px;font-size:14px;font-weight:bold;cursor:pointer}
-.start{background:linear-gradient(90deg,#8d4cff,#6737df);color:white}
-.stop{background:#292331;border:1px solid #59465f;color:#eee5f5}
-button:disabled,select:disabled,input:disabled{opacity:.45;cursor:not-allowed}
-.status{display:flex;justify-content:space-between;align-items:center;gap:12px;color:#aaa0b9;font-size:13px;margin-top:18px}
-.status strong{color:#d5b6ff;text-align:right}
-.notice{color:#93899f;font-size:11px;line-height:1.5;text-align:center;margin-top:19px}
-[hidden]{display:none!important}
-@media(max-width:480px){body{padding:16px 11px}.panel{padding:16px}}
+:root {
+  color-scheme: dark;
+  --bg: #000;
+  --panel: #050505;
+  --white: #fff;
+  --line: #dedede;
+  --muted: #aaa;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  padding: 20px;
+  background: #000;
+  color: var(--white);
+  font-family: Arial, Helvetica, sans-serif;
+}
+.app { max-width: 1200px; margin: auto; }
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  border: 2px solid var(--line);
+  border-radius: 15px;
+  padding: 18px 25px;
+  margin-bottom: 18px;
+}
+.brand { display: flex; align-items: center; gap: 18px; }
+.logo {
+  font-size: 76px;
+  font-weight: 900;
+  line-height: 1;
+  border-right: 2px solid white;
+  padding-right: 20px;
+}
+h1 { margin: 0; font-size: 42px; letter-spacing: 2px; }
+.subtitle { font-size: 17px; margin-top: 4px; color: #ddd; }
+.top-status { font-size: 18px; white-space: nowrap; }
+.top-status strong { margin-left: 8px; }
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+.column { display: flex; flex-direction: column; gap: 14px; }
+.panel {
+  background: var(--panel);
+  border: 2px solid var(--line);
+  border-radius: 16px;
+  padding: 20px;
+}
+h2 { font-size: 23px; margin: 0 0 17px; }
+.mode-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+button, select, input { font: inherit; }
+button { cursor: pointer; }
+.mode {
+  min-height: 68px;
+  border: 2px solid #888;
+  border-radius: 12px;
+  background: #080808;
+  color: white;
+  font-size: 17px;
+  font-weight: 700;
+}
+.mode.active {
+  background: white;
+  color: black;
+  border-color: white;
+}
+.field-title { font-size: 21px; font-weight: 700; margin-bottom: 15px; }
+.rate-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 17px;
+}
+.rate-number {
+  width: 85px;
+  padding: 8px;
+  text-align: center;
+  border: 2px solid #888;
+  border-radius: 9px;
+  background: #050505;
+  color: white;
+}
+input[type="range"] {
+  width: 100%;
+  accent-color: white;
+  margin: 17px 0 5px;
+}
+.range-labels {
+  display: flex;
+  justify-content: space-between;
+  color: #ccc;
+  font-size: 14px;
+}
+.setting-row {
+  display: grid;
+  grid-template-columns: 145px 1fr;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+  font-size: 17px;
+}
+select {
+  width: 100%;
+  padding: 11px;
+  border: 2px solid #888;
+  border-radius: 10px;
+  color: white;
+  background: #080808;
+}
+.activation-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  align-items: center;
+  margin-top: 22px;
+  font-size: 17px;
+}
+.activation-options {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+}
+.activation-options label {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+input[type="radio"] { accent-color: white; }
+.actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.action {
+  min-height: 90px;
+  border: 2px solid white;
+  border-radius: 13px;
+  background: #000;
+  color: white;
+  font-size: 25px;
+  font-weight: 800;
+}
+#startBtn { background: white; color: black; }
+.action:disabled { opacity: .45; cursor: not-allowed; }
+.notice {
+  margin-top: 18px;
+  border: 2px solid #888;
+  border-radius: 13px;
+  padding: 14px;
+  color: #ddd;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.hidden { display: none !important; }
+@media(max-width: 760px) {
+  body { padding: 10px; }
+  header { padding: 13px; }
+  .logo { font-size: 48px; padding-right: 12px; }
+  h1 { font-size: 25px; }
+  .subtitle { font-size: 13px; }
+  .top-status { font-size: 13px; }
+  .layout { grid-template-columns: 1fr; }
+  .setting-row { grid-template-columns: 125px 1fr; }
+}
 </style>
 </head>
 <body>
 <main class="app">
-
 <header>
-  <h1>V MACRO</h1>
-  <p>Desktop Input Control</p>
+  <div class="brand">
+    <div class="logo">V</div>
+    <div>
+      <h1>V MACRO</h1>
+      <div class="subtitle">Desktop Input Control</div>
+    </div>
+  </div>
+  <div class="top-status">Status:<strong id="statusText">Stopped</strong></div>
 </header>
 
-<section class="panel">
-  <h2>Input Type</h2>
-  <div class="mode-options">
-    <button class="mode-option active" id="mouseMode" type="button">Mouse Clicks</button>
-    <button class="mode-option" id="keyboardMode" type="button">Keyboard Presses</button>
-  </div>
-</section>
+<div class="layout">
+  <section class="column">
+    <div class="panel">
+      <h2>Input Type</h2>
+      <div class="mode-buttons">
+        <button class="mode active" id="mouseMode" type="button">🖱 Mouse Clicks</button>
+        <button class="mode" id="keyboardMode" type="button">⌨ Keyboard Presses</button>
+      </div>
+    </div>
 
-<section class="panel" id="mousePanel">
-  <h2>Mouse Clicks</h2>
-  <div class="field">
-    <label for="clickSpeed">Target Clicks Per Second <span class="value" id="clickSpeedValue">10</span></label>
-    <input id="clickSpeed" type="range" min="1" max="1000" value="10">
-  </div>
-  <div class="field">
-    <label for="clickButton">Mouse Button</label>
-    <select id="clickButton">
-      <option value="left">Left Click</option>
-      <option value="right">Right Click</option>
-      <option value="middle">Middle Click</option>
-      <option value="mouse4">Mouse 4</option>
-      <option value="mouse5">Mouse 5</option>
-    </select>
-  </div>
-</section>
+    <div class="panel" id="mousePanel">
+      <div class="field-title">Mouse Clicks</div>
+      <div class="rate-heading">
+        <span>Target Clicks Per Second:</span>
+        <input class="rate-number" id="clickSpeedValue" type="number" min="1" max="1000" value="10">
+      </div>
+      <input id="clickSpeed" type="range" min="1" max="1000" value="10">
+      <div class="range-labels"><span>1</span><span>1,000</span></div>
+      <div class="setting-row">
+        <label for="clickButton">Mouse Button:</label>
+        <select id="clickButton">
+          <option value="left">Left Click</option>
+          <option value="right">Right Click</option>
+          <option value="middle">Middle Click</option>
+          <option value="mouse4">Mouse 4</option>
+          <option value="mouse5">Mouse 5</option>
+        </select>
+      </div>
+    </div>
 
-<section class="panel" id="keyboardPanel" hidden>
-  <h2>Keyboard Presses</h2>
-  <div class="field">
-    <label for="keySpeed">Target Key Presses Per Second <span class="value" id="keySpeedValue">10</span></label>
-    <input id="keySpeed" type="range" min="1" max="1000" value="10">
-  </div>
-  <div class="field">
-    <label for="selectedKey">Select Key</label>
-    <select id="selectedKey">
-      <option value="F">F</option>
-      <option value="R">R</option>
-      <option value="E">E</option>
-      <option value="Q">Q</option>
-      <option value="SPACE">Space</option>
-      <option value="SHIFT">Shift</option>
-      <option value="CTRL">Ctrl</option>
-      <option value="ALT">Alt</option>
-    </select>
-  </div>
-</section>
+    <div class="panel hidden" id="keyboardPanel">
+      <div class="field-title">Keyboard Presses</div>
+      <div class="rate-heading">
+        <span>Target Key Presses Per Second:</span>
+        <input class="rate-number" id="keySpeedValue" type="number" min="1" max="1000" value="10">
+      </div>
+      <input id="keySpeed" type="range" min="1" max="1000" value="10">
+      <div class="range-labels"><span>1</span><span>1,000</span></div>
+      <div class="setting-row">
+        <label for="selectedKey">Select Key:</label>
+        <select id="selectedKey">
+          <option value="F">F</option>
+          <option value="R">R</option>
+          <option value="E">E</option>
+          <option value="Q">Q</option>
+          <option value="SPACE">Space</option>
+          <option value="SHIFT">Shift</option>
+          <option value="CTRL">Ctrl</option>
+          <option value="ALT">Alt</option>
+        </select>
+      </div>
+    </div>
+  </section>
 
-<section class="panel">
-  <h2>Activation Settings</h2>
+  <section class="column">
+    <div class="panel">
+      <h2>Activation Settings</h2>
+      <div class="setting-row">
+        <label for="activationKey">Activation Key:</label>
+        <select id="activationKey">
+          <option value="F6">F6</option>
+          <option value="F7">F7</option>
+          <option value="F8">F8</option>
+          <option value="F9">F9</option>
+          <option value="F10">F10</option>
+          <option value="F11">F11</option>
+          <option value="F12">F12</option>
+          <option value="INSERT">Insert</option>
+        </select>
+      </div>
+      <div class="activation-row">
+        <span>Activation Mode:</span>
+        <div class="activation-options">
+          <label><input type="radio" name="activationMode" value="toggle" checked> Toggle</label>
+          <label><input type="radio" name="activationMode" value="hold"> Hold</label>
+        </div>
+      </div>
+    </div>
 
-  <div class="field">
-    <label for="activationKey">Activation Key</label>
-    <select id="activationKey">
-      <option value="F6">F6</option>
-      <option value="F7">F7</option>
-      <option value="F8">F8</option>
-      <option value="F9">F9</option>
-      <option value="F10">F10</option>
-      <option value="F11">F11</option>
-      <option value="F12">F12</option>
-      <option value="INSERT">Insert</option>
-    </select>
-  </div>
+    <div class="actions">
+      <button class="action" id="startBtn" type="button">▶ START</button>
+      <button class="action" id="stopBtn" type="button">■ STOP</button>
+    </div>
+  </section>
+</div>
 
-  <div class="field">
-    <label for="activationMode">Activation Mode</label>
-    <select id="activationMode">
-      <option value="toggle">Toggle</option>
-      <option value="hold">Hold</option>
-    </select>
-  </div>
-
-  <div class="actions">
-    <button class="start" id="startBtn" type="button">START</button>
-    <button class="stop" id="stopBtn" type="button" disabled>STOP</button>
-  </div>
-
-  <div class="status">
-    <span>Status</span>
-    <strong id="statusText">Stopped</strong>
-  </div>
-</section>
-
-<p class="notice">
-  V Macro is a Windows desktop application. Speed is a requested target,
-  not a guarantee. Actual input speed depends on Windows, hardware,
-  and the application receiving input. Use automation only where permitted.
-</p>
-
+<div class="notice">
+  V Macro is a Windows desktop application. Speed is a requested target, not a guarantee. Use automation only where permitted.
+</div>
 </main>
 
 <script>
 const $ = id => document.getElementById(id);
+const bridge = window.vMacro;
 
 let inputMode = "mouse";
-let locked = false;
-
-function setLocked(value) {
-  locked = value;
-
-  [
-    "mouseMode",
-    "keyboardMode",
-    "clickSpeed",
-    "keySpeed",
-    "clickButton",
-    "selectedKey",
-    "activationKey",
-    "activationMode"
-  ].forEach(id => {
-    $(id).disabled = value;
-  });
-
-  $("startBtn").disabled = value;
-  $("stopBtn").disabled = !value;
-}
+let refreshTimer = null;
 
 function setMode(mode) {
-  if (locked) return;
-
   inputMode = mode;
-
-  $("mousePanel").hidden = mode !== "mouse";
-  $("keyboardPanel").hidden = mode !== "keyboard";
-
   $("mouseMode").classList.toggle("active", mode === "mouse");
   $("keyboardMode").classList.toggle("active", mode === "keyboard");
-
-  updateEngine();
-}
-
-function getSettings() {
-  return {
-    inputMode,
-    clickSpeed: Number($("clickSpeed").value),
-    keySpeed: Number($("keySpeed").value),
-    clickButton: $("clickButton").value,
-    selectedKey: $("selectedKey").value,
-    activationKey: $("activationKey").value,
-    activationMode: $("activationMode").value
-  };
-}
-
-async function updateEngine() {
-  if (!window.vMacro) return false;
-
-  try {
-    await window.vMacro.updateSettings(getSettings());
-    return true;
-  } catch (error) {
-    $("statusText").textContent = error.message;
-    return false;
-  }
-}
-
-async function refreshStatus() {
-  if (!window.vMacro) return;
-
-  try {
-    const result = await window.vMacro.getStatus();
-
-    if (result.status === "starting") {
-      $("statusText").textContent = "Starting...";
-      setLocked(true);
-    } else if (result.status === "running") {
-      const action = result.settings.activationMode === "hold"
-        ? "Hold"
-        : "Press";
-
-      $("statusText").textContent =
-        "Armed — " + action + " " + result.settings.activationKey;
-
-      setLocked(true);
-    } else if (result.status === "error") {
-      $("statusText").textContent =
-        "Error: " + (result.error || "Worker stopped unexpectedly");
-
-      setLocked(false);
-    } else {
-      $("statusText").textContent = "Stopped";
-      setLocked(false);
-    }
-  } catch (error) {
-    $("statusText").textContent = "Status unavailable";
-    setLocked(false);
-  }
+  $("mousePanel").classList.toggle("hidden", mode !== "mouse");
+  $("keyboardPanel").classList.toggle("hidden", mode !== "keyboard");
 }
 
 $("mouseMode").addEventListener("click", () => setMode("mouse"));
 $("keyboardMode").addEventListener("click", () => setMode("keyboard"));
 
-$("clickSpeed").addEventListener("input", () => {
-  $("clickSpeedValue").textContent = $("clickSpeed").value;
-});
+function connectRate(sliderId, numberId) {
+  const slider = $(sliderId);
+  const number = $(numberId);
 
-$("keySpeed").addEventListener("input", () => {
-  $("keySpeedValue").textContent = $("keySpeed").value;
-});
+  slider.addEventListener("input", () => {
+    number.value = slider.value;
+  });
 
-[
-  "clickSpeed",
-  "keySpeed",
-  "clickButton",
-  "selectedKey",
-  "activationKey",
-  "activationMode"
-].forEach(id => {
-  $(id).addEventListener("change", updateEngine);
-});
+  number.addEventListener("change", () => {
+    let value = Number(number.value);
+    if (!Number.isFinite(value)) value = 1;
+    value = Math.max(1, Math.min(1000, Math.round(value)));
+    number.value = value;
+    slider.value = value;
+  });
+}
 
-$("startBtn").addEventListener("click", async () => {
-  if (!window.vMacro || locked) return;
+connectRate("clickSpeed", "clickSpeedValue");
+connectRate("keySpeed", "keySpeedValue");
 
-  $("statusText").textContent = "Starting...";
-  setLocked(true);
+function getSettings() {
+  return {
+    inputMode,
+    clickSpeed: Number($("clickSpeedValue").value),
+    keySpeed: Number($("keySpeedValue").value),
+    clickButton: $("clickButton").value,
+    selectedKey: $("selectedKey").value,
+    activationKey: $("activationKey").value,
+    activationMode: document.querySelector(
+      'input[name="activationMode"]:checked'
+    ).value
+  };
+}
+
+function setLocked(locked) {
+  document.querySelectorAll("select, input, #mouseMode, #keyboardMode")
+    .forEach(control => control.disabled = locked);
+  $("startBtn").disabled = locked;
+}
+
+function showStatus(status) {
+  const labels = {
+    stopped: "Stopped",
+    starting: "Starting",
+    running: "Running",
+    error: "Error"
+  };
+  $("statusText").textContent = labels[status] || "Stopped";
+  setLocked(status === "starting" || status === "running");
+}
+
+async function refreshStatus() {
+  if (!bridge) {
+    showStatus("error");
+    $("statusText").textContent = "Not Connected";
+    return;
+  }
 
   try {
-    const updated = await updateEngine();
+    const result = await bridge.getStatus();
+    showStatus(result.status);
+  } catch (error) {
+    $("statusText").textContent = "Connection Error";
+  }
+}
 
-    if (!updated) {
-      setLocked(false);
-      return;
-    }
+$("startBtn").addEventListener("click", async () => {
+  if (!bridge) {
+    $("statusText").textContent = "Not Connected";
+    return;
+  }
 
-    const result = await window.vMacro.start();
-
-    if (result && result.success === false) {
-      throw new Error(result.error || "Could not start macro");
-    }
-
+  try {
+    await bridge.updateSettings(getSettings());
+    const result = await bridge.start();
+    if (!result.success) throw new Error(result.error || "Could not start");
     await refreshStatus();
   } catch (error) {
-    $("statusText").textContent = "Error: " + error.message;
-    setLocked(false);
+    $("statusText").textContent = "Error";
+    console.error(error);
   }
 });
 
 $("stopBtn").addEventListener("click", async () => {
-  if (!window.vMacro) return;
-
-  $("statusText").textContent = "Stopping...";
+  if (!bridge) {
+    $("statusText").textContent = "Not Connected";
+    return;
+  }
 
   try {
-    const result = await window.vMacro.stop();
-
-    if (result && result.success === false) {
-      throw new Error(result.error || "Could not stop macro");
-    }
-
+    await bridge.stop();
     await refreshStatus();
   } catch (error) {
-    $("statusText").textContent = "Error: " + error.message;
+    $("statusText").textContent = "Error";
+    console.error(error);
   }
 });
 
 async function initialize() {
-  if (!window.vMacro) {
-    $("statusText").textContent = "Windows desktop app required";
-    $("startBtn").disabled = true;
-    $("stopBtn").disabled = true;
-    return;
-  }
-
   setMode("mouse");
-  await updateEngine();
   await refreshStatus();
-
-  // Keep the displayed status in sync with the worker.
-  window.setInterval(refreshStatus, 500);
+  refreshTimer = window.setInterval(refreshStatus, 500);
 }
+
+window.addEventListener("beforeunload", () => {
+  if (refreshTimer) window.clearInterval(refreshTimer);
+});
 
 initialize();
 </script>
