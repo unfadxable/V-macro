@@ -45,19 +45,24 @@ class MacroController {
   constructor() {
     this.settings = { ...DEFAULT_SETTINGS };
     this.process = null;
-    this.running = false;
+    this.status = "stopped";
     this.lastError = null;
   }
 
   getStatus() {
     return {
-      running: this.running,
+      status: this.status,
+      running: this.status === "running" || this.status === "starting",
       settings: { ...this.settings },
       error: this.lastError
     };
   }
 
   updateSettings(settings = {}) {
+    if (this.status === "running" || this.status === "starting") {
+      throw new Error("Stop V Macro before changing settings.");
+    }
+
     const next = { ...this.settings, ...settings };
 
     for (const key of Object.keys(ALLOWED)) {
@@ -77,6 +82,8 @@ class MacroController {
     }
 
     this.settings = next;
+    this.lastError = null;
+
     return { success: true };
   }
 
@@ -87,10 +94,9 @@ class MacroController {
     const clickSpeed = s.clickSpeed;
     const keySpeed = s.keySpeed;
     const clickButton = s.clickButton;
-    const selectedKey = s.selectedKey;
+    const outputKey = KEY_CODES[s.selectedKey];
     const activationCode = ACTIVATION_CODES[s.activationKey];
     const activationMode = s.activationMode;
-    const outputKey = KEY_CODES[selectedKey];
 
     const script = `
 $ErrorActionPreference = 'Stop'
@@ -192,7 +198,7 @@ public static class VMacroInput
             Marshal.SizeOf(typeof(INPUT))
         );
 
-        if (sent != inputs.Length)
+        if (sent != (uint)inputs.Length)
         {
             throw new Exception("Windows did not accept all input events.");
         }
@@ -208,11 +214,13 @@ $outputKey = ${outputKey}
 $activationKey = ${activationCode}
 $activationMode = '${activationMode}'
 
-$interval = if ($inputMode -eq 'mouse') {
-    [Math]::Max(1, [Math]::Round(1000 / $clickSpeed))
+$speed = if ($inputMode -eq 'mouse') {
+    $clickSpeed
 } else {
-    [Math]::Max(1, [Math]::Round(1000 / $keySpeed))
+    $keySpeed
 }
+
+$interval = [Math]::Max(1, [int][Math]::Floor(1000 / $speed))
 
 $mouseDown = 0
 $mouseUp = 0
@@ -294,11 +302,12 @@ catch {
       throw new Error("V Macro requires Windows.");
     }
 
-    if (this.running) {
+    if (this.status === "starting" || this.status === "running") {
       return true;
     }
 
     this.lastError = null;
+    this.status = "starting";
 
     const script = this.buildPowerShellScript();
 
@@ -306,25 +315,30 @@ catch {
       .from(script, "utf16le")
       .toString("base64");
 
-    const worker = spawn(
-      "powershell.exe",
-      [
-        "-NoLogo",
-        "-NoProfile",
-        "-NonInteractive",
-        "-ExecutionPolicy",
-        "Bypass",
-        "-EncodedCommand",
-        encodedScript
-      ],
-      {
-        windowsHide: true,
-        stdio: ["ignore", "ignore", "pipe"]
-      }
-    );
+    let worker;
+
+    try {
+      worker = spawn(
+        "powershell.exe",
+        [
+          "-NoLogo",
+          "-NoProfile",
+          "-NonInteractive",
+          "-EncodedCommand",
+          encodedScript
+        ],
+        {
+          windowsHide: true,
+          stdio: ["ignore", "ignore", "pipe"]
+        }
+      );
+    } catch (error) {
+      this.status = "error";
+      this.lastError = error.message;
+      throw error;
+    }
 
     this.process = worker;
-    this.running = true;
 
     let errorOutput = "";
 
@@ -332,19 +346,31 @@ catch {
       errorOutput += data.toString();
     });
 
+    worker.on("spawn", () => {
+      if (this.process === worker) {
+        this.status = "running";
+      }
+    });
+
     worker.on("error", (error) => {
-      this.lastError = error.message;
-      this.running = false;
-      this.process = null;
+      if (this.process === worker) {
+        this.process = null;
+        this.status = "error";
+        this.lastError = error.message;
+      }
     });
 
     worker.on("close", (code) => {
       if (this.process === worker) {
         this.process = null;
-        this.running = false;
 
-        if (code !== 0 && errorOutput.trim()) {
-          this.lastError = errorOutput.trim();
+        if (code === 0) {
+          this.status = "stopped";
+        } else {
+          this.status = "error";
+          this.lastError =
+            errorOutput.trim() ||
+            "The PowerShell worker stopped unexpectedly.";
         }
       }
     });
@@ -353,13 +379,17 @@ catch {
   }
 
   stop() {
-    if (this.process) {
-      const worker = this.process;
-      this.process = null;
-      this.running = false;
-      worker.kill();
-    } else {
-      this.running = false;
+    const worker = this.process;
+
+    this.process = null;
+    this.status = "stopped";
+
+    if (worker) {
+      try {
+        worker.kill();
+      } catch (error) {
+        this.lastError = error.message;
+      }
     }
 
     return false;
