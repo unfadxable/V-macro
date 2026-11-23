@@ -1,3 +1,4 @@
+
 const { app, BrowserWindow, ipcMain } = require("electron");
 const path = require("path");
 const { MacroController } = require("./macro");
@@ -32,11 +33,15 @@ ipcMain.handle("macro:update-settings", (_, settings) => {
 });
 
 ipcMain.handle("macro:start", () => {
-  return macro.start();
+  try {
+    return { success: true, running: macro.start() };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
 });
 
 ipcMain.handle("macro:stop", () => {
-  return macro.stop();
+  return { success: true, running: macro.stop() };
 });
 
 app.whenReady().then(() => {
@@ -49,9 +54,11 @@ app.whenReady().then(() => {
   });
 });
 
-app.on("window-all-closed", () => {
+app.on("before-quit", () => {
   macro.stop();
+});
 
+app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
     app.quit();
   }
