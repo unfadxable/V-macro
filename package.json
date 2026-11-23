@@ -5,9 +5,23 @@
   "description": "V Macro desktop application",
   "main": "main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "build": "electron-builder --win"
   },
   "devDependencies": {
-    "electron": "45.4.1"
+    "electron": "45.4.1",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "com.vmacro.desktop",
+    "productName": "V Macro",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    }
   }
 }
