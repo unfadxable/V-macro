@@ -1,404 +1,208 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>V Macro</title>
-
-  <style>
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      margin: 0;
-      min-height: 100vh;
-      padding: 28px 16px;
-      background: #0b0b12;
-      color: #f4f0ff;
-      font-family: Arial, sans-serif;
-    }
-
-    .app {
-      max-width: 760px;
-      margin: auto;
-    }
-
-    header {
-      text-align: center;
-      margin-bottom: 28px;
-    }
-
-    header h1 {
-      margin: 0;
-      font-size: 36px;
-      letter-spacing: 3px;
-      background: linear-gradient(90deg, #a56bff, #6845ff);
-      -webkit-background-clip: text;
-      color: transparent;
-    }
-
-    header p {
-      color: #9991ad;
-      margin-top: 9px;
-      font-size: 13px;
-    }
-
-    .panel {
-      background: linear-gradient(145deg, #191522, #11101a);
-      border: 1px solid #34264c;
-      border-radius: 15px;
-      padding: 22px;
-      margin-bottom: 18px;
-      box-shadow: 0 8px 25px #0005;
-    }
-
-    h2 {
-      margin: 0 0 18px;
-      font-size: 17px;
-      color: #c5a3ff;
-    }
-
-    .field {
-      margin-bottom: 20px;
-    }
-
-    .field:last-child {
-      margin-bottom: 0;
-    }
-
-    label {
-      display: block;
-      color: #d8d0e8;
-      font-size: 13px;
-      margin-bottom: 9px;
-    }
-
-    .value {
-      float: right;
-      color: #bd91ff;
-      font-weight: bold;
-    }
-
-    select,
-    input[type="number"] {
-      width: 100%;
-      padding: 12px;
-      border-radius: 9px;
-      border: 1px solid #493565;
-      background: #100d18;
-      color: white;
-      outline: none;
-      font-size: 14px;
-    }
-
-    input[type="range"] {
-      width: 100%;
-      accent-color: #9560ff;
-      cursor: pointer;
-    }
-
-    .mode-options {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-
-    .mode-option {
-      padding: 16px 10px;
-      border: 1px solid #493565;
-      border-radius: 10px;
-      background: #100d18;
-      color: #cfc4e4;
-      cursor: pointer;
-      text-align: center;
-      font-size: 14px;
-    }
-
-    .mode-option.active {
-      background: #38205c;
-      border-color: #a16cff;
-      color: white;
-      box-shadow: 0 0 14px #8a4dff35;
-    }
-
-    .actions {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-top: 20px;
-    }
-
-    button {
-      border: 0;
-      border-radius: 10px;
-      padding: 14px;
-      font-size: 14px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-
-    .start {
-      background: linear-gradient(90deg, #8d4cff, #6737df);
-      color: white;
-    }
-
-    .stop {
-      background: #292331;
-      border: 1px solid #59465f;
-      color: #eee5f5;
-    }
-
-    button:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    .status {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      color: #aaa0b9;
-      font-size: 13px;
-      margin-top: 18px;
-    }
-
-    .status strong {
-      color: #d5b6ff;
-    }
-
-    .notice {
-      color: #93899f;
-      font-size: 11px;
-      line-height: 1.5;
-      text-align: center;
-      margin-top: 20px;
-    }
-
-    [hidden] {
-      display: none !important;
-    }
-
-    @media (max-width: 480px) {
-      body {
-        padding: 18px 12px;
-      }
-
-      .panel {
-        padding: 17px;
-      }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>V Macro</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;padding:28px 16px;background:#0b0b12;color:#f4f0ff;font-family:Arial,sans-serif}
+.app{max-width:760px;margin:auto}
+header{text-align:center;margin-bottom:28px}
+header h1{margin:0;font-size:36px;letter-spacing:3px;background:linear-gradient(90deg,#a56bff,#6845ff);-webkit-background-clip:text;color:transparent}
+header p{color:#9991ad;margin-top:9px;font-size:13px}
+.panel{background:linear-gradient(145deg,#191522,#11101a);border:1px solid #34264c;border-radius:15px;padding:22px;margin-bottom:18px;box-shadow:0 8px 25px #0005}
+h2{margin:0 0 18px;font-size:17px;color:#c5a3ff}
+.field{margin-bottom:20px}
+.field:last-child{margin-bottom:0}
+label{display:block;color:#d8d0e8;font-size:13px;margin-bottom:9px}
+.value{float:right;color:#bd91ff;font-weight:bold}
+select{width:100%;padding:12px;border-radius:9px;border:1px solid #493565;background:#100d18;color:white;outline:none;font-size:14px}
+input[type=range]{width:100%;accent-color:#9560ff;cursor:pointer}
+.mode-options{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.mode-option{padding:16px 10px;border:1px solid #493565;border-radius:10px;background:#100d18;color:#cfc4e4;cursor:pointer;text-align:center;font-size:14px}
+.mode-option.active{background:#38205c;border-color:#a16cff;color:white;box-shadow:0 0 14px #8a4dff35}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px}
+button{border:0;border-radius:10px;padding:14px;font-size:14px;font-weight:bold;cursor:pointer}
+.start{background:linear-gradient(90deg,#8d4cff,#6737df);color:white}
+.stop{background:#292331;border:1px solid #59465f;color:#eee5f5}
+button:disabled{opacity:.5;cursor:not-allowed}
+.status{display:flex;justify-content:space-between;align-items:center;color:#aaa0b9;font-size:13px;margin-top:18px}
+.status strong{color:#d5b6ff}
+.notice{color:#93899f;font-size:11px;line-height:1.5;text-align:center;margin-top:20px}
+[hidden]{display:none!important}
+@media(max-width:480px){body{padding:18px 12px}.panel{padding:17px}}
+</style>
 </head>
-
 <body>
-  <main class="app">
-    <header>
-      <h1>V MACRO</h1>
-      <p>Desktop Input Control</p>
-    </header>
+<main class="app">
+<header>
+<h1>V MACRO</h1>
+<p>Desktop Input Control</p>
+</header>
 
-    <section class="panel">
-      <h2>Input Type</h2>
+<section class="panel">
+<h2>Input Type</h2>
+<div class="mode-options">
+<button class="mode-option active" id="mouseMode" type="button">Mouse Clicks</button>
+<button class="mode-option" id="keyboardMode" type="button">Keyboard Presses</button>
+</div>
+</section>
 
-      <div class="mode-options">
-        <button class="mode-option active"
-                id="mouseMode"
-                type="button">
-          Mouse Clicks
-        </button>
+<section class="panel" id="mousePanel">
+<h2>Mouse Clicks</h2>
+<div class="field">
+<label for="clickSpeed">Click Speed <span class="value" id="clickSpeedValue">10</span></label>
+<input id="clickSpeed" type="range" min="1" max="1000" value="10">
+</div>
+<div class="field">
+<label for="clickButton">Mouse Button</label>
+<select id="clickButton">
+<option value="left">Left Click</option>
+<option value="right">Right Click</option>
+<option value="middle">Middle Click</option>
+<option value="mouse4">Mouse 4</option>
+<option value="mouse5">Mouse 5</option>
+</select>
+</div>
+</section>
 
-        <button class="mode-option"
-                id="keyboardMode"
-                type="button">
-          Keyboard Presses
-        </button>
-      </div>
-    </section>
+<section class="panel" id="keyboardPanel" hidden>
+<h2>Keyboard Presses</h2>
+<div class="field">
+<label for="keySpeed">Key Speed <span class="value" id="keySpeedValue">10</span></label>
+<input id="keySpeed" type="range" min="1" max="1000" value="10">
+</div>
+<div class="field">
+<label for="selectedKey">Select Key</label>
+<select id="selectedKey">
+<option value="F">F</option>
+<option value="R">R</option>
+<option value="E">E</option>
+<option value="Q">Q</option>
+<option value="SPACE">Space</option>
+<option value="SHIFT">Shift</option>
+<option value="CTRL">Ctrl</option>
+<option value="ALT">Alt</option>
+</select>
+</div>
+</section>
 
-    <section class="panel" id="mousePanel">
-      <h2>Mouse Clicks</h2>
+<section class="panel">
+<h2>Activation Settings</h2>
+<div class="field">
+<label for="activationKey">Activation Key</label>
+<select id="activationKey">
+<option value="F6">F6</option>
+<option value="F7">F7</option>
+<option value="F8">F8</option>
+<option value="F9">F9</option>
+<option value="F10">F10</option>
+<option value="F11">F11</option>
+<option value="F12">F12</option>
+<option value="INSERT">Insert</option>
+</select>
+</div>
+<div class="field">
+<label for="activationMode">Activation Mode</label>
+<select id="activationMode">
+<option value="toggle">Toggle</option>
+<option value="hold">Hold</option>
+</select>
+</div>
+<div class="actions">
+<button class="start" id="startBtn" type="button">START</button>
+<button class="stop" id="stopBtn" type="button">STOP</button>
+</div>
+<div class="status">
+<span>Status</span>
+<strong id="statusText">Stopped</strong>
+</div>
+</section>
 
-      <div class="field">
-        <label for="clickSpeed">
-          Click Speed
-          <span class="value" id="clickSpeedValue">10</span>
-        </label>
+<p class="notice">
+V Macro desktop application. Actual input speed depends on Windows,
+hardware, and the application receiving input. Use automation only
+where permitted.
+</p>
+</main>
 
-        <input id="clickSpeed"
-               type="range"
-               min="1"
-               max="1000"
-               value="10">
-      </div>
+<script>
+const $ = id => document.getElementById(id);
+let inputMode = "mouse";
 
-      <div class="field">
-        <label for="clickButton">Mouse Button</label>
-        <select id="clickButton">
-          <option value="left">Left Click</option>
-          <option value="right">Right Click</option>
-          <option value="middle">Middle Click</option>
-          <option value="mouse4">Mouse 4</option>
-          <option value="mouse5">Mouse 5</option>
-        </select>
-      </div>
-    </section>
+function setMode(mode) {
+  inputMode = mode;
+  $("mousePanel").hidden = mode !== "mouse";
+  $("keyboardPanel").hidden = mode !== "keyboard";
+  $("mouseMode").classList.toggle("active", mode === "mouse");
+  $("keyboardMode").classList.toggle("active", mode === "keyboard");
+  updateEngine();
+}
 
-    <section class="panel" id="keyboardPanel" hidden>
-      <h2>Keyboard Presses</h2>
+async function updateEngine() {
+  if (!window.vMacro) return;
 
-      <div class="field">
-        <label for="keySpeed">
-          Key Speed
-          <span class="value" id="keySpeedValue">10</span>
-        </label>
+  const settings = {
+    inputMode,
+    clickSpeed: Number($("clickSpeed").value),
+    keySpeed: Number($("keySpeed").value),
+    clickButton: $("clickButton").value,
+    selectedKey: $("selectedKey").value,
+    activationKey: $("activationKey").value,
+    activationMode: $("activationMode").value
+  };
 
-        <input id="keySpeed"
-               type="range"
-               min="1"
-               max="1000"
-               value="10">
-      </div>
+  try {
+    await window.vMacro.updateSettings(settings);
+  } catch (error) {
+    $("statusText").textContent = error.message;
+  }
+}
 
-      <div class="field">
-        <label for="selectedKey">Select Key</label>
-        <select id="selectedKey">
-          <option value="F">F</option>
-          <option value="R">R</option>
-          <option value="E">E</option>
-          <option value="Q">Q</option>
-          <option value="SPACE">Space</option>
-          <option value="SHIFT">Shift</option>
-          <option value="CTRL">Ctrl</option>
-          <option value="ALT">Alt</option>
-        </select>
-      </div>
-    </section>
+$("mouseMode").addEventListener("click", () => setMode("mouse"));
+$("keyboardMode").addEventListener("click", () => setMode("keyboard"));
 
-    <section class="panel">
-      <h2>Activation Settings</h2>
+$("clickSpeed").addEventListener("input", () => {
+  $("clickSpeedValue").textContent = $("clickSpeed").value;
+  updateEngine();
+});
 
-      <div class="field">
-        <label for="activationMode">Activation Mode</label>
-        <select id="activationMode">
-          <option value="toggle">Toggle</option>
-          <option value="hold">Hold</option>
-        </select>
-      </div>
+$("keySpeed").addEventListener("input", () => {
+  $("keySpeedValue").textContent = $("keySpeed").value;
+  updateEngine();
+});
 
-      <div class="actions">
-        <button class="start" id="startBtn" type="button">
-          START
-        </button>
+["clickButton","selectedKey","activationKey","activationMode"].forEach(id => {
+  $(id).addEventListener("change", updateEngine);
+});
 
-        <button class="stop" id="stopBtn" type="button">
-          STOP
-        </button>
-      </div>
-
-      <div class="status">
-        <span>Status</span>
-        <strong id="statusText">Stopped</strong>
-      </div>
-    </section>
-
-    <p class="notice">
-      V Macro desktop application. Actual input speed depends on
-      Windows, hardware, and the application receiving input.
-      Test only in applications where automation is permitted.
-    </p>
-  </main>
-
-  <script>
-    const $ = (id) => document.getElementById(id);
-
-    let inputMode = "mouse";
-
-    function setMode(mode) {
-      inputMode = mode;
-
-      $("mousePanel").hidden = mode !== "mouse";
-      $("keyboardPanel").hidden = mode !== "keyboard";
-
-      $("mouseMode").classList.toggle("active", mode === "mouse");
-      $("keyboardMode").classList.toggle("active", mode === "keyboard");
-
-      updateEngine();
+$("startBtn").addEventListener("click", async () => {
+  await updateEngine();
+  try {
+    const result = await window.vMacro.start();
+    if (result && result.success === false) {
+      $("statusText").textContent = result.error;
+      return;
     }
+    $("statusText").textContent = "Running";
+  } catch (error) {
+    $("statusText").textContent = error.message;
+  }
+});
 
-    async function updateEngine() {
-      if (!window.vMacro) return;
+$("stopBtn").addEventListener("click", async () => {
+  try {
+    await window.vMacro.stop();
+    $("statusText").textContent = "Stopped";
+  } catch (error) {
+    $("statusText").textContent = error.message;
+  }
+});
 
-      const settings = {
-        inputMode,
-        clickSpeed: Number($("clickSpeed").value),
-        keySpeed: Number($("keySpeed").value),
-        clickButton: $("clickButton").value,
-        selectedKey: $("selectedKey").value,
-        activationMode: $("activationMode").value
-      };
-
-      try {
-        await window.vMacro.updateSettings(settings);
-      } catch (error) {
-        $("statusText").textContent = error.message;
-      }
-    }
-
-    $("mouseMode").addEventListener("click", () => {
-      setMode("mouse");
-    });
-
-    $("keyboardMode").addEventListener("click", () => {
-      setMode("keyboard");
-    });
-
-    $("clickSpeed").addEventListener("input", () => {
-      $("clickSpeedValue").textContent = $("clickSpeed").value;
-      updateEngine();
-    });
-
-    $("keySpeed").addEventListener("input", () => {
-      $("keySpeedValue").textContent = $("keySpeed").value;
-      updateEngine();
-    });
-
-    [
-      "clickButton",
-      "selectedKey",
-      "activationMode"
-    ].forEach((id) => {
-      $(id).addEventListener("change", updateEngine);
-    });
-
-    $("startBtn").addEventListener("click", async () => {
-      await updateEngine();
-
-      try {
-        const result = await window.vMacro.start();
-
-        if (result && result.success === false) {
-          $("statusText").textContent = result.error;
-          return;
-        }
-
-        $("statusText").textContent = "Running";
-      } catch (error) {
-        $("statusText").textContent = error.message;
-      }
-    });
-
-    $("stopBtn").addEventListener("click", async () => {
-      try {
-        await window.vMacro.stop();
-        $("statusText").textContent = "Stopped";
-      } catch (error) {
-        $("statusText").textContent = error.message;
-      }
-    });
-
-    setMode("mouse");
-  </script>
+setMode("mouse");
+</script>
 </body>
 </html>
